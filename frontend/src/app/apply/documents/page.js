@@ -15,11 +15,22 @@ const docTypes = [
   { key: 'photo', label: 'Passport-size Photo' },
 ];
 
+// Must match the storage bucket settings in Supabase
+const MAX_SIZE = 5 * 1024 * 1024;
+const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
+const ACCEPT = '.pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png';
+
 const uploadBox = "flex items-center justify-between border border-dashed border-[#1B2A4A]/25 rounded-xl p-4 cursor-pointer hover:border-[#C9A227] hover:bg-[#C9A227]/5 transition";
 
 // Stored paths look like userId/appId/passport-1712345678-myfile.pdf -> "myfile.pdf"
 function fileNameFromPath(path) {
   return String(path || '').split('/').pop().replace(/^[a-z_]+-\d+-/, '');
+}
+
+// Keeps only safe characters in file names (letters, numbers, dot, dash, underscore)
+function safeFileName(name) {
+  const cleaned = String(name || 'file').replace(/[^a-zA-Z0-9._-]/g, '_').replace(/_+/g, '_');
+  return cleaned.slice(-100);
 }
 
 function DocumentsForm() {
@@ -83,11 +94,23 @@ function DocumentsForm() {
     loadData();
   }, [router, appId]);
 
-  function handleFileChange(key, file) {
+  function handleFileChange(key, label, file) {
+    if (!file) return;
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setMessage(`${label}: only PDF, JPG or PNG files are allowed.`);
+      return;
+    }
+    if (file.size > MAX_SIZE) {
+      setMessage(`${label}: file is too large (maximum 5 MB).`);
+      return;
+    }
+
+    setMessage('');
     setFiles({ ...files, [key]: file });
 
     // HubSpot: first file selected -> Documents Pending (sent once per visit)
-    if (file && !pendingSent.current) {
+    if (!pendingSent.current) {
       pendingSent.current = true;
       syncStage(appId, 'Documents Pending');
     }
@@ -113,11 +136,11 @@ function DocumentsForm() {
         const file = files[doc.key];
         if (!file) continue;
 
-        const filePath = `${userId}/${appId}/${doc.key}-${Date.now()}-${file.name}`;
+        const filePath = `${userId}/${appId}/${doc.key}-${Date.now()}-${safeFileName(file.name)}`;
 
         const { error: uploadError } = await supabase.storage
           .from('documents')
-          .upload(filePath, file);
+          .upload(filePath, file, { contentType: file.type });
 
         if (uploadError) throw uploadError;
 
@@ -132,7 +155,7 @@ function DocumentsForm() {
 
       router.push(`/apply/review?app=${appId}`);
     } catch (err) {
-      setMessage(err.message);
+      setMessage(err.message || 'Upload failed. Please try again.');
       setLoading(false);
     }
   }
@@ -148,7 +171,7 @@ function DocumentsForm() {
           <div className="max-w-2xl">
             <p className="text-sm font-medium text-[#C9A227] mb-2">Step 4 of 4</p>
             <h1 className="font-display text-3xl font-semibold text-[#1B2A4A] mb-2">Documents</h1>
-            <p className="text-sm text-[#2A2E35]/70 mb-8">Upload the required documents. You will review everything before submitting.</p>
+            <p className="text-sm text-[#2A2E35]/70 mb-8">Upload the required documents as PDF, JPG or PNG (max 5 MB each). You will review everything before submitting.</p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {requiredDocs.map((doc) => {
@@ -167,7 +190,7 @@ function DocumentsForm() {
                         {!newFile && !savedName && <p className="text-xs text-[#2A2E35]/50">Click to upload</p>}
                       </div>
                     </div>
-                    <input type="file" className="hidden" onChange={(e) => handleFileChange(doc.key, e.target.files[0])} />
+                    <input type="file" accept={ACCEPT} className="hidden" onChange={(e) => { handleFileChange(doc.key, doc.label, e.target.files[0]); e.target.value = ''; }} />
                   </label>
                 );
               })}
