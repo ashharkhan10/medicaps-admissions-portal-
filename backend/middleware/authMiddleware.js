@@ -12,15 +12,20 @@ async function requireAuth(req, res, next) {
 
   const token = authHeader.split(' ')[1];
 
-  const { data, error } = await supabase.auth.getUser(token);
+  try {
+    const { data, error } = await supabase.auth.getUser(token);
 
-  if (error || !data?.user) {
-    return res.status(401).json({ error: 'Invalid or expired session.' });
+    if (error || !data?.user) {
+      return res.status(401).json({ error: 'Invalid or expired session.' });
+    }
+
+    // Attach the verified user to the request so later code can use it
+    req.user = data.user;
+    next();
+  } catch (err) {
+    console.error('Auth check failed:', err.message);
+    return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
   }
-
-  // Attach the verified user to the request so later code can use it
-  req.user = data.user;
-  next();
 }
 
 module.exports = requireAuth;

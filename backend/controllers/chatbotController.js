@@ -6,7 +6,7 @@ require('dotenv').config();
 const supabase = require('../config/supabaseClient');
 const { logChatQuestion } = require('../config/hubspotNotes');
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY, timeout: 20 * 1000, maxRetries: 1 });
 
 const SYSTEM_PROMPT = `You are the Medicaps University Admissions Assistant — a friendly, knowledgeable chatbot on the university's online application portal.
 
