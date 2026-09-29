@@ -151,6 +151,10 @@ function ReviewForm() {
   async function handleSubmit() {
     setMessage('');
 
+    if (isPostgrad && !employment) {
+      setMessage('Please complete Employment History before submitting.');
+      return;
+    }
     if (!academic) {
       setMessage('Please complete Academic History before submitting.');
       return;
@@ -191,6 +195,7 @@ function ReviewForm() {
     setTimeout(() => router.push('/dashboard'), 1500);
   }
 
+  const noExperience = !!employment?.no_experience;
   const employmentEnd = employment?.currently_employed ? 'Present' : formatDay(employment?.end_date);
   const grade = academic ? `${academic.grade_value || ''} (${scaleText[academic.grade_scale] || academic.grade_scale || ''})` : '';
   const englishTest = academic?.english_test_type ? `${testText[academic.english_test_type] || academic.english_test_type} - Score ${academic.english_test_score || '—'}` : 'None';
@@ -251,11 +256,17 @@ function ReviewForm() {
 
             {isPostgrad && (
               <Section title="Employment History" editHref={edit('/apply/employment-history')}>
-                <Field label="Employer Name" value={employment?.employer_name} />
-                <Field label="Job Title" value={employment?.job_title} />
-                <Field label="Currently Employed" value={employment ? (employment.currently_employed ? 'Yes' : 'No') : ''} />
-                <Field label="Start Date" value={formatDay(employment?.start_date)} />
-                <Field label="End Date" value={employmentEnd} />
+                {noExperience ? (
+                  <Field label="Work Experience" value="No work experience" wide />
+                ) : (
+                  <>
+                    <Field label="Employer Name" value={employment?.employer_name} />
+                    <Field label="Job Title" value={employment?.job_title} />
+                    <Field label="Currently Employed" value={employment ? (employment.currently_employed ? 'Yes' : 'No') : ''} />
+                    <Field label="Start Date" value={formatDay(employment?.start_date)} />
+                    <Field label="End Date" value={employmentEnd} />
+                  </>
+                )}
               </Section>
             )}
 
