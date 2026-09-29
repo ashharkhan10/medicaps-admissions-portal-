@@ -3,9 +3,11 @@
 import { Suspense, useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
+import AuthShell from '../../components/AuthShell';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
-const digitClass = "w-12 h-14 text-center text-xl font-semibold text-[#1B2A4A] border border-[#1B2A4A]/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C9A227] focus:border-[#C9A227] transition";
+const digitClass = "w-11 h-12 text-center text-xl font-semibold text-[#1B2A4A] bg-white border border-[#1B2A4A]/20 rounded-xl focus:outline-none focus:border-[#C9A227] focus:shadow-[0_0_0_4px_rgba(201,162,39,0.15)] transition-all";
+const verifyBtn = "w-full bg-[#1B2A4A] hover:bg-[#243758] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 text-white rounded-xl p-3.5 font-medium shadow-lg shadow-[#1B2A4A]/20";
 
 function maskEmail(email) {
   const [name, domain] = email.split('@');
@@ -101,14 +103,14 @@ function VerifyOtpForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F7F5F1] px-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-10 text-center">
-        <a href="/signin" className="inline-block mb-6"><img src="/logo.png" alt="Medicaps University" className="h-24 mx-auto mix-blend-multiply" /></a>
+    <AuthShell>
+      <div className="text-center">
+        <a href="/signin" className="inline-block mb-5"><img src="/logo.png" alt="Medicaps University" className="h-20 mix-blend-multiply" /></a>
 
-        <h1 className="font-display text-3xl font-semibold text-[#1B2A4A] mb-4">Enter your OTP</h1>
+        <h2 className="font-display text-2xl font-semibold text-[#1B2A4A] mb-3">Enter your OTP</h2>
 
         <p className="text-sm text-[#2A2E35]/70 mb-1">Please enter the code sent to</p>
-        <p className="text-sm font-medium text-[#C9A227] mb-2">{maskEmail(email)}</p>
+        <p className="text-sm font-medium text-[#C9A227] mb-2 break-all">{maskEmail(email)}</p>
         <p className="text-xs text-[#2A2E35]/50 mb-6">Please also check your spam or junk folder.</p>
 
         <form onSubmit={handleVerify}>
@@ -118,7 +120,7 @@ function VerifyOtpForm() {
             ))}
           </div>
 
-          <button type="submit" disabled={loading} className="w-full bg-[#1B2A4A] hover:bg-[#243758] transition text-white rounded-xl p-3.5 font-medium">
+          <button type="submit" disabled={loading} className={verifyBtn}>
             {loading ? 'Verifying...' : 'Verify'}
           </button>
 
@@ -134,13 +136,13 @@ function VerifyOtpForm() {
           )}
         </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }
 
 export default function VerifyOtp() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#F7F5F1]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#1B2A4A]" />}>
       <VerifyOtpForm />
     </Suspense>
   );
