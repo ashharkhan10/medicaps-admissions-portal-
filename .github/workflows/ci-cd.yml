@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Dependency vulnerability scan
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Build
         run: npm run build
         env:
@@ -52,13 +55,28 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Dependency vulnerability scan
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Check every file for syntax errors
         run: find . -name "*.js" -not -path "./node_modules/*" -print0 | xargs -0 -n1 node --check
 
+  secrets:
+    name: Secrets scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   deploy:
     name: Deploy to Render and Vercel
-    needs: [frontend, backend]
-    # Deploy only after a push to main, and only if both checks passed
+    needs: [frontend, backend, secrets]
+    # Deploy only after a push to main, and only if every check passed
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
